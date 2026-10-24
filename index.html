@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGuard Log v3.2</title>
+    <title>NeuroGuard Log v3.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -14,7 +14,7 @@
     <!-- ヘッダー -->
     <header class="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
         <div>
-            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.2 (未来1週間自動予測)</span></h1>
+            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.3 (月曜始まり)</span></h1>
             <p class="text-xs text-slate-400">パニック・不安障害 ＆ IBS因果関係予測カレンダー</p>
         </div>
     </header>
@@ -80,7 +80,7 @@
         </form>
     </section>
 
-    <!-- 2. カレンダービュー (実績 ＋ 未来1週間予測) -->
+    <!-- 2. カレンダービュー (月曜始まり) -->
     <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-lg">
         <div class="flex justify-between items-center mb-3">
             <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
@@ -93,15 +93,15 @@
             </div>
         </div>
 
-        <!-- 凡例 (レジェンド) -->
+        <!-- 凡例 -->
         <div class="flex gap-4 text-[11px] text-slate-400 mb-3 bg-slate-950 p-2 rounded border border-slate-800/80">
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> 実績ログ</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full border border-dashed border-amber-400 bg-amber-950/40 inline-block"></span> 🔮向こう1週間の自動予測</div>
         </div>
 
-        <!-- カレンダーグリッド -->
+        <!-- カレンダーヘッダー（月曜始まり） -->
         <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-2">
-            <div>日</div><div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div>土</div>
+            <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="text-blue-400">土</div><div class="text-rose-400">日</div>
         </div>
         <div id="calendar-grid" class="grid grid-cols-7 gap-1.5">
             <!-- 動的生成 -->
@@ -141,7 +141,7 @@
             return today.toISOString().split('T')[0];
         }
 
-        // フォーム送信（実績または未来の服薬予定登録）
+        // フォーム送信
         document.getElementById('log-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const date = document.getElementById('log-date').value;
@@ -171,12 +171,11 @@
             renderCalendar();
         }
 
-        // --- 未来1週間（向こう7日間）の単日予測関数 ---
+        // 未来1週間（向こう7日間）の予測計算
         function predictForDate(targetDateStr, logs) {
             const targetDate = new Date(targetDateStr);
             const today = new Date(getTodayStr());
 
-            // 過去7日間の実測ログのみを取得して平均傾向を出す
             const pastLogs = logs.filter(l => new Date(l.date) <= today).slice(0, 7);
             
             let avgAnxiety = 2.0, avgDiarrhea = 1.5;
@@ -185,14 +184,12 @@
                 avgDiarrhea = pastLogs.reduce((s, l) => s + (l.diarrheaSeverity || 1), 0) / pastLogs.length;
             }
 
-            // その日に登録されている予定・服薬設定を取得（なければデフォルト値）
             const dayConfig = logs.find(l => l.date === targetDateStr) || {};
             const lifestyle = dayConfig.lifestyle || 'office';
             const takeAnxietyMed = dayConfig.anxietyMedTaken !== undefined ? dayConfig.anxietyMedTaken : true;
             const takeKampo = dayConfig.kampoIntake !== undefined ? (dayConfig.kampoIntake === 1) : true;
             const takeProbiotics = dayConfig.probioticsIntake !== undefined ? (dayConfig.probioticsIntake === 1) : true;
 
-            // 負荷と緩和の補正計算
             let eventPenalty = (lifestyle === 'event') ? 0.8 : (lifestyle === 'office') ? 0.4 : 0.1;
             let anxietyRelief = takeAnxietyMed ? 1.0 : 0;
             let kampoRelief = takeKampo ? 0.7 : 0;
@@ -205,7 +202,7 @@
             return { predAnxiety, predDiarrhea, lifestyle };
         }
 
-        // --- カレンダー描画メイン処理 ---
+        // カレンダー描画（月曜始まりロジック）
         function renderCalendar() {
             const logs = getStoredLogs();
             const logMap = {};
@@ -220,7 +217,11 @@
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
 
-            const firstDayIndex = new Date(currentYear, currentMonth, 1).getDay();
+            // 月曜始まりのオフセット計算
+            // JSの getDay() は 0:日, 1:月, 2:火... 6:土
+            // 月曜始まりにするため (day + 6) % 7 に変換 (月:0, 火:1, ..., 日:6)
+            const firstDayRaw = new Date(currentYear, currentMonth, 1).getDay();
+            const firstDayIndex = (firstDayRaw + 6) % 7; 
             const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             // 前月の余白
@@ -237,7 +238,6 @@
                 let bgClass = "bg-slate-950 border-slate-800";
                 let content = `<div class="text-[10px] text-slate-400 font-bold">${d}</div>`;
 
-                // 1. 実績データが存在する場合（過去〜本日）
                 if (log && cellDate <= todayObj) {
                     bgClass = "bg-slate-900 border-emerald-600/80";
                     content = `
@@ -249,7 +249,6 @@
                         <div class="text-[8px] text-slate-400 truncate">${getLifeLabel(log.lifestyle)}</div>
                     `;
                 } 
-                // 2. 向こう1週間（明日〜7日後）の未来予測日の場合
                 else if (cellDate > todayObj && cellDate <= sevenDaysLater) {
                     const pred = predictForDate(dateStr, logs);
                     bgClass = "bg-amber-950/20 border-dashed border-amber-500/70";
@@ -304,7 +303,7 @@
             localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
         }
 
-        // データ管理機能
+        // データ管理
         function exportData() {
             const rawData = localStorage.getItem(STORAGE_KEY);
             if (!rawData || rawData === '[]') return alert('データがありません');
