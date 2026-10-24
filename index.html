@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGuard Log v3.3</title>
+    <title>NeuroGuard Log v3.4</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -14,7 +14,7 @@
     <!-- ヘッダー -->
     <header class="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
         <div>
-            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.3 (月曜始まり)</span></h1>
+            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.4 (安定剤用量選択対応)</span></h1>
             <p class="text-xs text-slate-400">PD ＆ IBS因果関係予測カレンダー</p>
         </div>
     </header>
@@ -55,21 +55,28 @@
                 </div>
             </div>
 
-            <!-- 服薬チェック -->
+            <!-- 服薬実績（用量選択対応） -->
             <div class="border-t border-slate-800 pt-3">
                 <label class="block text-xs font-medium text-slate-400 mb-2">服薬実績（未来日の場合は服用予定）</label>
-                <div class="grid grid-cols-3 gap-2">
-                    <label class="flex items-center gap-2 bg-slate-800 p-2 rounded border border-slate-700 cursor-pointer text-xs">
-                        <input type="checkbox" id="log-med-anxiety" class="accent-emerald-500 rounded" checked>
-                        <span>💊 精神安定剤</span>
-                    </label>
-                    <label class="flex items-center gap-2 bg-slate-800 p-2 rounded border border-slate-700 cursor-pointer text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <!-- 精神安定剤（量を選択） -->
+                    <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
+                        <label class="block text-[11px] text-slate-300 mb-1 font-medium">💊 精神安定剤</label>
+                        <select id="log-med-anxiety-dose" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
+                            <option value="0">なし (0錠)</option>
+                            <option value="0.5">あり (0.5錠)</option>
+                            <option value="1.0" selected>あり (1.0錠)</option>
+                        </select>
+                    </div>
+                    <!-- 漢方 -->
+                    <label class="flex items-center gap-2 bg-slate-800 p-2.5 rounded border border-slate-700 cursor-pointer text-xs">
                         <input type="checkbox" id="log-med-kampo" class="accent-emerald-500 rounded" checked>
-                        <span>🌿 漢方薬</span>
+                        <span>🌿 漢方薬あり</span>
                     </label>
-                    <label class="flex items-center gap-2 bg-slate-800 p-2 rounded border border-slate-700 cursor-pointer text-xs">
+                    <!-- 整腸剤 -->
+                    <label class="flex items-center gap-2 bg-slate-800 p-2.5 rounded border border-slate-700 cursor-pointer text-xs">
                         <input type="checkbox" id="log-med-probiotics" class="accent-emerald-500 rounded" checked>
-                        <span>🧪 整腸剤</span>
+                        <span>🧪 整腸剤あり</span>
                     </label>
                 </div>
             </div>
@@ -80,7 +87,7 @@
         </form>
     </section>
 
-    <!-- 2. カレンダービュー (月曜始まり) -->
+    <!-- 2. カレンダービュー -->
     <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 mb-6 shadow-lg">
         <div class="flex justify-between items-center mb-3">
             <h2 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
@@ -93,13 +100,11 @@
             </div>
         </div>
 
-        <!-- 凡例 -->
         <div class="flex gap-4 text-[11px] text-slate-400 mb-3 bg-slate-950 p-2 rounded border border-slate-800/80">
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block"></span> 実績ログ</div>
             <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full border border-dashed border-amber-400 bg-amber-950/40 inline-block"></span> 🔮向こう1週間の自動予測</div>
         </div>
 
-        <!-- カレンダーヘッダー（月曜始まり） -->
         <div class="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-400 mb-2">
             <div>月</div><div>火</div><div>水</div><div>木</div><div>金</div><div class="text-blue-400">土</div><div class="text-rose-400">日</div>
         </div>
@@ -129,7 +134,7 @@
     <script>
         const STORAGE_KEY = 'neuroguard_logs_v3';
         let currentYear = new Date().getFullYear();
-        let currentMonth = new Date().getMonth(); // 0-indexed
+        let currentMonth = new Date().getMonth();
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('log-date').value = getTodayStr();
@@ -150,7 +155,7 @@
                 lifestyle: document.getElementById('log-lifestyle').value,
                 finalAnxietyLevel: Number(document.getElementById('log-anxiety').value),
                 diarrheaSeverity: Number(document.getElementById('log-diarrhea').value),
-                anxietyMedTaken: document.getElementById('log-med-anxiety').checked,
+                anxietyMedDose: Number(document.getElementById('log-med-anxiety-dose').value), // 0, 0.5, 1.0
                 kampoIntake: document.getElementById('log-med-kampo').checked ? 1 : 0,
                 probioticsIntake: document.getElementById('log-med-probiotics').checked ? 1 : 0
             };
@@ -171,9 +176,8 @@
             renderCalendar();
         }
 
-        // 未来1週間（向こう7日間）の予測計算
+        // 予測計算（安定剤の用量 0, 0.5, 1.0 を考慮）
         function predictForDate(targetDateStr, logs) {
-            const targetDate = new Date(targetDateStr);
             const today = new Date(getTodayStr());
 
             const pastLogs = logs.filter(l => new Date(l.date) <= today).slice(0, 7);
@@ -186,12 +190,15 @@
 
             const dayConfig = logs.find(l => l.date === targetDateStr) || {};
             const lifestyle = dayConfig.lifestyle || 'office';
-            const takeAnxietyMed = dayConfig.anxietyMedTaken !== undefined ? dayConfig.anxietyMedTaken : true;
+            // 保存データがあればその用量、なければデフォルト 1.0錠
+            const anxietyMedDose = dayConfig.anxietyMedDose !== undefined ? Number(dayConfig.anxietyMedDose) : 1.0;
             const takeKampo = dayConfig.kampoIntake !== undefined ? (dayConfig.kampoIntake === 1) : true;
             const takeProbiotics = dayConfig.probioticsIntake !== undefined ? (dayConfig.probioticsIntake === 1) : true;
 
             let eventPenalty = (lifestyle === 'event') ? 0.8 : (lifestyle === 'office') ? 0.4 : 0.1;
-            let anxietyRelief = takeAnxietyMed ? 1.0 : 0;
+            
+            // 安定剤の効果は用量（0.5錠なら半分、1.0錠ならフル）に比例させる
+            let anxietyRelief = anxietyMedDose * 1.0; 
             let kampoRelief = takeKampo ? 0.7 : 0;
             let probioticsRelief = takeProbiotics ? 0.5 : 0;
 
@@ -199,10 +206,10 @@
             let rawDiarrhea = avgDiarrhea + (eventPenalty * 0.7) + ((predAnxiety - 2) * 0.3) - kampoRelief - probioticsRelief;
             let predDiarrhea = Math.max(1, Math.min(5, Math.round(rawDiarrhea)));
 
-            return { predAnxiety, predDiarrhea, lifestyle };
+            return { predAnxiety, predDiarrhea, lifestyle, anxietyMedDose };
         }
 
-        // カレンダー描画（月曜始まりロジック）
+        // カレンダー描画
         function renderCalendar() {
             const logs = getStoredLogs();
             const logMap = {};
@@ -217,19 +224,14 @@
             const grid = document.getElementById('calendar-grid');
             grid.innerHTML = '';
 
-            // 月曜始まりのオフセット計算
-            // JSの getDay() は 0:日, 1:月, 2:火... 6:土
-            // 月曜始まりにするため (day + 6) % 7 に変換 (月:0, 火:1, ..., 日:6)
             const firstDayRaw = new Date(currentYear, currentMonth, 1).getDay();
             const firstDayIndex = (firstDayRaw + 6) % 7; 
             const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-            // 前月の余白
             for (let i = 0; i < firstDayIndex; i++) {
                 grid.innerHTML += `<div class="bg-slate-950/40 rounded p-1 h-16 opacity-30"></div>`;
             }
 
-            // 日付セル生成
             for (let d = 1; d <= totalDays; d++) {
                 const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                 const cellDate = new Date(dateStr);
@@ -240,25 +242,27 @@
 
                 if (log && cellDate <= todayObj) {
                     bgClass = "bg-slate-900 border-emerald-600/80";
+                    const doseText = log.anxietyMedDose ? ` 💊${log.anxietyMedDose}錠` : '';
                     content = `
                         <div class="flex justify-between items-center text-[10px] font-bold text-emerald-400">
                             <span>${d}</span>
                             <span class="text-[8px] bg-emerald-950 text-emerald-300 px-1 rounded">済</span>
                         </div>
                         <div class="text-[9px] text-emerald-300 font-semibold mt-0.5">安:${log.finalAnxietyLevel} 下:${log.diarrheaSeverity}</div>
-                        <div class="text-[8px] text-slate-400 truncate">${getLifeLabel(log.lifestyle)}</div>
+                        <div class="text-[8px] text-slate-400 truncate">${getLifeLabel(log.lifestyle)}${doseText}</div>
                     `;
                 } 
                 else if (cellDate > todayObj && cellDate <= sevenDaysLater) {
                     const pred = predictForDate(dateStr, logs);
                     bgClass = "bg-amber-950/20 border-dashed border-amber-500/70";
+                    const doseText = pred.anxietyMedDose ? ` 💊${pred.anxietyMedDose}錠` : '';
                     content = `
                         <div class="flex justify-between items-center text-[10px] font-bold text-amber-300">
                             <span>${d}</span>
                             <span class="text-[8px] text-amber-400">🔮予測</span>
                         </div>
                         <div class="text-[9px] text-amber-200 font-semibold mt-0.5">安:${pred.predAnxiety} 下:${pred.predDiarrhea}</div>
-                        <div class="text-[8px] text-amber-400/80 truncate">${getLifeLabel(pred.lifestyle)}</div>
+                        <div class="text-[8px] text-amber-400/80 truncate">${getLifeLabel(pred.lifestyle)}${doseText}</div>
                     `;
                 }
 
@@ -289,7 +293,7 @@
                 document.getElementById('anxiety-val').innerText = found.finalAnxietyLevel || 2;
                 document.getElementById('log-diarrhea').value = found.diarrheaSeverity || 1;
                 document.getElementById('diarrhea-val').innerText = found.diarrheaSeverity || 1;
-                document.getElementById('log-med-anxiety').checked = found.anxietyMedTaken !== undefined ? found.anxietyMedTaken : true;
+                document.getElementById('log-med-anxiety-dose').value = found.anxietyMedDose !== undefined ? found.anxietyMedDose : 1.0;
                 document.getElementById('log-med-kampo').checked = found.kampoIntake === 1;
                 document.getElementById('log-med-probiotics').checked = found.probioticsIntake === 1;
             }
