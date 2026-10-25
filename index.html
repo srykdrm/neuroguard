@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroGuard Log v3.5</title>
+    <title>NeuroGuard Log v3.6</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f8fafc; font-family: sans-serif; }
@@ -14,8 +14,8 @@
     <!-- ヘッダー -->
     <header class="mb-6 flex justify-between items-center border-b border-slate-800 pb-4">
         <div>
-            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.5 (疲労度追加・安定剤修正)</span></h1>
-            <p class="text-xs text-slate-400">パニック・不安障害 ＆ IBS因果関係予測カレンダー</p>
+            <h1 class="text-xl font-bold text-emerald-400">NeuroGuard Log <span class="text-xs bg-emerald-950 text-emerald-300 px-2 py-0.5 rounded border border-emerald-800">v3.6 (服薬常時表示)</span></h1>
+            <p class="text-xs text-slate-400">PD ＆ IBS因果関係予測カレンダー</p>
         </div>
     </header>
 
@@ -60,25 +60,39 @@
                 </div>
             </div>
 
-            <!-- 服薬実績 -->
+            <!-- 服薬実績（レ点チェック＆ボタンスタイル） -->
             <div class="border-t border-slate-800 pt-3">
                 <label class="block text-xs font-medium text-slate-400 mb-2">服薬実績（未来日の場合は服用予定）</label>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="bg-slate-800 p-2.5 rounded border border-slate-700">
-                        <label class="block text-[11px] text-slate-300 mb-1 font-medium">💊 精神安定剤</label>
-                        <select id="log-med-anxiety-dose" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-slate-200">
-                            <option value="0">なし (0錠)</option>
-                            <option value="0.5">あり (0.5錠)</option>
-                            <option value="1.0" selected>あり (1.0錠)</option>
-                        </select>
+                    <!-- 精神安定剤：レ点チェック＋用量切り替え -->
+                    <div class="bg-slate-800 p-2.5 rounded border border-slate-700 flex flex-col justify-between">
+                        <label class="text-[11px] text-slate-300 font-medium mb-1">💊 精神安定剤</label>
+                        <div class="flex gap-1">
+                            <label class="flex-1 text-center bg-slate-900 hover:bg-slate-700 text-[11px] py-1 px-1 rounded cursor-pointer border border-slate-700">
+                                <input type="radio" name="med-anxiety-dose" value="0" class="sr-only peer">
+                                <span class="peer-checked:text-emerald-400 peer-checked:font-bold">なし</span>
+                            </label>
+                            <label class="flex-1 text-center bg-slate-900 hover:bg-slate-700 text-[11px] py-1 px-1 rounded cursor-pointer border border-slate-700">
+                                <input type="radio" name="med-anxiety-dose" value="0.5" class="sr-only peer">
+                                <span class="peer-checked:text-emerald-400 peer-checked:font-bold">0.5錠</span>
+                            </label>
+                            <label class="flex-1 text-center bg-slate-900 hover:bg-slate-700 text-[11px] py-1 px-1 rounded cursor-pointer border border-slate-700">
+                                <input type="radio" name="med-anxiety-dose" value="1.0" class="sr-only peer" checked>
+                                <span class="peer-checked:text-emerald-400 peer-checked:font-bold">1.0錠</span>
+                            </label>
+                        </div>
                     </div>
+
+                    <!-- 漢方薬レ点チェック -->
                     <label class="flex items-center gap-2 bg-slate-800 p-2.5 rounded border border-slate-700 cursor-pointer text-xs">
-                        <input type="checkbox" id="log-med-kampo" class="accent-emerald-500 rounded" checked>
-                        <span>🌿 漢方薬あり</span>
+                        <input type="checkbox" id="log-med-kampo" class="accent-emerald-500 w-4 h-4 rounded" checked>
+                        <span class="font-medium text-slate-300">🌿 漢方薬を服用</span>
                     </label>
+
+                    <!-- 整腸剤レ点チェック -->
                     <label class="flex items-center gap-2 bg-slate-800 p-2.5 rounded border border-slate-700 cursor-pointer text-xs">
-                        <input type="checkbox" id="log-med-probiotics" class="accent-emerald-500 rounded" checked>
-                        <span>🧪 整腸剤あり</span>
+                        <input type="checkbox" id="log-med-probiotics" class="accent-emerald-500 w-4 h-4 rounded" checked>
+                        <span class="font-medium text-slate-300">🧪 整腸剤を服用</span>
                     </label>
                 </div>
             </div>
@@ -152,13 +166,18 @@
         document.getElementById('log-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const date = document.getElementById('log-date').value;
+            
+            // 安定剤の選択用ラジオボタンから値を取得
+            const selectedDoseRadio = document.querySelector('input[name="med-anxiety-dose"]:checked');
+            const anxietyMedDose = selectedDoseRadio ? Number(selectedDoseRadio.value) : 1.0;
+
             const newLog = {
                 date,
                 lifestyle: document.getElementById('log-lifestyle').value,
                 finalAnxietyLevel: Number(document.getElementById('log-anxiety').value),
                 diarrheaSeverity: Number(document.getElementById('log-diarrhea').value),
-                fatigueLevel: Number(document.getElementById('log-fatigue').value), // 疲労度追加
-                anxietyMedDose: Number(document.getElementById('log-med-anxiety-dose').value), // 0, 0.5, 1.0
+                fatigueLevel: Number(document.getElementById('log-fatigue').value),
+                anxietyMedDose: anxietyMedDose,
                 kampoIntake: document.getElementById('log-med-kampo').checked ? 1 : 0,
                 probioticsIntake: document.getElementById('log-med-probiotics').checked ? 1 : 0
             };
@@ -179,7 +198,7 @@
             renderCalendar();
         }
 
-        // 予測計算（疲労度および安定剤用量を考慮）
+        // 予測計算
         function predictForDate(targetDateStr, logs) {
             const today = new Date(getTodayStr());
 
@@ -199,8 +218,6 @@
             const takeProbiotics = dayConfig.probioticsIntake !== undefined ? (dayConfig.probioticsIntake === 1) : true;
 
             let eventPenalty = (lifestyle === 'event') ? 0.8 : (lifestyle === 'office') ? 0.4 : 0.1;
-            
-            // 疲労度が高いと不安や下痢リスクが跳ね上がるペナルティを加算（平均値からの乖離を反映）
             let fatiguePenalty = (avgFatigue - 2) * 0.2;
 
             let anxietyRelief = anxietyMedDose * 1.0; 
@@ -211,7 +228,16 @@
             let rawDiarrhea = avgDiarrhea + (eventPenalty * 0.7) + fatiguePenalty + ((predAnxiety - 2) * 0.3) - kampoRelief - probioticsRelief;
             let predDiarrhea = Math.max(1, Math.min(5, Math.round(rawDiarrhea)));
 
-            return { predAnxiety, predDiarrhea, lifestyle, anxietyMedDose };
+            return { predAnxiety, predDiarrhea, lifestyle, anxietyMedDose, kampoIntake: takeKampo ? 1 : 0, probioticsIntake: takeProbiotics ? 1 : 0 };
+        }
+
+        // 服薬状況のアイコン文字列生成ヘルパー
+        function getMedIcons(dose, kampo, probiotics) {
+            let parts = [];
+            if (dose > 0) parts.append ? parts.push(`💊${dose}`) : parts.push(`💊${dose}`);
+            if (kampo === 1) parts.push('🌿');
+            if (probiotics === 1) parts.push('🧪');
+            return parts.length > 0 ? parts.join('') : '-';
         }
 
         // カレンダー描画
@@ -234,7 +260,7 @@
             const totalDays = new Date(currentYear, currentMonth + 1, 0).getDate();
 
             for (let i = 0; i < firstDayIndex; i++) {
-                grid.innerHTML += `<div class="bg-slate-950/40 rounded p-1 h-16 opacity-30"></div>`;
+                grid.innerHTML += `<div class="bg-slate-950/40 rounded p-1 h-20 opacity-30"></div>`;
             }
 
             for (let d = 1; d <= totalDays; d++) {
@@ -247,32 +273,34 @@
 
                 if (log && cellDate <= todayObj) {
                     bgClass = "bg-slate-900 border-emerald-600/80";
-                    const doseText = (log.anxietyMedDose !== undefined) ? ` 💊${log.anxietyMedDose}錠` : '';
+                    const medStr = getMedIcons(log.anxietyMedDose, log.kampoIntake, log.probioticsIntake);
                     content = `
                         <div class="flex justify-between items-center text-[10px] font-bold text-emerald-400">
                             <span>${d}</span>
-                            <span class="text-[8px] bg-emerald-950 text-emerald-300 px-1 rounded">済</span>
+                            <span class="text-[7px] bg-emerald-950 text-emerald-300 px-1 rounded">済</span>
                         </div>
-                        <div class="text-[9px] text-emerald-300 font-semibold mt-0.5">安:${log.finalAnxietyLevel} 下:${log.diarrheaSeverity} 疲:${log.fatigueLevel || 2}</div>
-                        <div class="text-[8px] text-slate-400 truncate">${getLifeLabel(log.lifestyle)}${doseText}</div>
+                        <div class="text-[8px] text-emerald-300 font-semibold leading-tight">安:${log.finalAnxietyLevel} 下:${log.diarrheaSeverity} 疲:${log.fatigueLevel || 2}</div>
+                        <div class="text-[8px] text-slate-300 truncate">${getLifeLabel(log.lifestyle)}</div>
+                        <div class="text-[8px] text-amber-300 truncate">${medStr}</div>
                     `;
                 } 
                 else if (cellDate > todayObj && cellDate <= sevenDaysLater) {
                     const pred = predictForDate(dateStr, logs);
                     bgClass = "bg-amber-950/20 border-dashed border-amber-500/70";
-                    const doseText = (pred.anxietyMedDose !== undefined) ? ` 💊${pred.anxietyMedDose}錠` : '';
+                    const medStr = getMedIcons(pred.anxietyMedDose, pred.kampoIntake, pred.probioticsIntake);
                     content = `
                         <div class="flex justify-between items-center text-[10px] font-bold text-amber-300">
                             <span>${d}</span>
-                            <span class="text-[8px] text-amber-400">🔮予測</span>
+                            <span class="text-[7px] text-amber-400">🔮予測</span>
                         </div>
-                        <div class="text-[9px] text-amber-200 font-semibold mt-0.5">安:${pred.predAnxiety} 下:${pred.predDiarrhea}</div>
-                        <div class="text-[8px] text-amber-400/80 truncate">${getLifeLabel(pred.lifestyle)}${doseText}</div>
+                        <div class="text-[8px] text-amber-200 font-semibold leading-tight">安:${pred.predAnxiety} 下:${pred.predDiarrhea}</div>
+                        <div class="text-[8px] text-amber-400/80 truncate">${getLifeLabel(pred.lifestyle)}</div>
+                        <div class="text-[8px] text-amber-300/90 truncate">${medStr}</div>
                     `;
                 }
 
                 grid.innerHTML += `
-                    <div onclick="selectDate('${dateStr}')" class="${bgClass} border rounded p-1 h-16 cursor-pointer hover:border-emerald-400 transition flex flex-col justify-between">
+                    <div onclick="selectDate('${dateStr}')" class="${bgClass} border rounded p-1 h-20 cursor-pointer hover:border-emerald-400 transition flex flex-col justify-between overflow-hidden">
                         ${content}
                     </div>
                 `;
@@ -301,14 +329,14 @@
                 document.getElementById('log-fatigue').value = found.fatigueLevel || 2;
                 document.getElementById('fatigue-val').innerText = found.fatigueLevel || 2;
                 
-                // 過去ログに保存されている安定剤の用量を確実にセレクトボックスに反映
-                const dose = found.anxietyMedDose !== undefined ? found.anxietyMedDose : 1.0;
-                document.getElementById('log-med-anxiety-dose').value = dose;
+                // 精神安定剤の用量ボタンを選択状態にする
+                const dose = found.anxietyMedDose !== undefined ? String(found.anxietyMedDose) : "1.0";
+                const radio = document.querySelector(`input[name="med-anxiety-dose"][value="${dose}"]`);
+                if (radio) radio.checked = true;
 
                 document.getElementById('log-med-kampo').checked = found.kampoIntake === 1;
                 document.getElementById('log-med-probiotics').checked = found.probioticsIntake === 1;
             } else {
-                // ログがない日付の場合はデフォルト値にリセット
                 document.getElementById('log-lifestyle').value = 'office';
                 document.getElementById('log-anxiety').value = 2;
                 document.getElementById('anxiety-val').innerText = 2;
@@ -316,7 +344,10 @@
                 document.getElementById('diarrhea-val').innerText = 1;
                 document.getElementById('log-fatigue').value = 2;
                 document.getElementById('fatigue-val').innerText = 2;
-                document.getElementById('log-med-anxiety-dose').value = "1.0";
+                
+                const defaultRadio = document.querySelector('input[name="med-anxiety-dose"][value="1.0"]');
+                if (defaultRadio) defaultRadio.checked = true;
+
                 document.getElementById('log-med-kampo').checked = true;
                 document.getElementById('log-med-probiotics').checked = true;
             }
